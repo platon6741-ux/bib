@@ -1,0 +1,2179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bib OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+[hidden] { display: none !important; }
+/* Layout: full-screen desktop. Wallpaper with a rising sun, floating windows, taskbar along the bottom with Start at the left and the clock at the right. */
+:root {
+  --font-ui: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --wall-top: #000000;
+  --wall-bot: #000000;
+  --wall-glow: #000000;
+  --sun: #000000;
+  --ring: rgba(255, 255, 255, 0.06);
+  --glass: rgba(251, 247, 243, 0.78);
+  --glass-edge: rgba(70, 40, 60, 0.16);
+  --fg: #2b2331;
+  --fg-dim: #675b6e;
+  --accent: #2f5fd0;
+  --accent-fg: #ffffff;
+  --win: #fcf9f6;
+  --win-bar: #efe7e1;
+  --win-edge: rgba(50, 30, 60, 0.2);
+  --shadow: 0 18px 44px rgba(60, 25, 55, 0.3);
+  --hover: rgba(50, 30, 70, 0.08);
+  --tile: rgba(255, 255, 255, 0.7);
+  --field: #ffffff;
+  --label: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --wall-top: #000000;
+    --wall-bot: #000000;
+    --wall-glow: #000000;
+    --sun: #000000;
+    --ring: rgba(255, 255, 255, 0.06);
+    --glass: rgba(26, 22, 42, 0.78);
+    --glass-edge: rgba(255, 255, 255, 0.12);
+    --fg: #f2edf6;
+    --fg-dim: #aba1ba;
+    --accent: #93acff;
+    --accent-fg: #10142b;
+    --win: #1f1b2f;
+    --win-bar: #2b2642;
+    --win-edge: rgba(255, 255, 255, 0.13);
+    --shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
+    --hover: rgba(255, 255, 255, 0.09);
+    --tile: rgba(255, 255, 255, 0.1);
+    --field: #161228;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --wall-top: #000000;
+  --wall-bot: #000000;
+  --wall-glow: #000000;
+  --sun: #000000;
+  --ring: rgba(255, 255, 255, 0.06);
+  --glass: rgba(26, 22, 42, 0.78);
+  --glass-edge: rgba(255, 255, 255, 0.12);
+  --fg: #f2edf6;
+  --fg-dim: #aba1ba;
+  --accent: #93acff;
+  --accent-fg: #10142b;
+  --win: #1f1b2f;
+  --win-bar: #2b2642;
+  --win-edge: rgba(255, 255, 255, 0.13);
+  --shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
+  --hover: rgba(255, 255, 255, 0.09);
+  --tile: rgba(255, 255, 255, 0.1);
+  --field: #161228;
+  color-scheme: dark;
+}
+
+html, body { height: 100%; }
+body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--wall-top);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+svg { display: block; }
+.i { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Desktop and wallpaper */
+.desktop {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(70% 60% at 76% 108%, var(--wall-glow) 0, transparent 70%),
+    linear-gradient(180deg, var(--wall-top), var(--wall-bot));
+}
+.wall { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.wall .ring { fill: none; stroke: var(--ring); stroke-width: 1.5; }
+.wall .sun { fill: var(--sun); opacity: 0.85; }
+
+.icons {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  max-height: calc(100% - 32px);
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.dicon {
+  width: 88px;
+  padding: 8px 4px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 0;
+  border-radius: 10px;
+  color: var(--fg);
+  text-decoration: none;
+  cursor: pointer;
+}
+.dicon:hover { background: var(--hover); }
+.dicon .tile {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--tile);
+  border: 1px solid var(--glass-edge);
+  color: var(--accent);
+}
+.dicon .tile .i { width: 28px; height: 28px; }
+.dicon span.lbl { font-size: 12.5px; font-weight: 500; text-align: center; line-height: 1.2; }
+
+/* Windows */
+.win {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  background: var(--win);
+  border: 1px solid var(--win-edge);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  min-width: 0;
+}
+.win:not(.active) { box-shadow: 0 8px 22px rgba(30, 15, 40, 0.18); }
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 6px 0 12px;
+  background: var(--win-bar);
+  border-bottom: 1px solid var(--win-edge);
+  cursor: grab;
+  touch-action: none;
+  flex: none;
+}
+.bar .i { width: 16px; height: 16px; color: var(--accent); }
+.bar .ttl { flex: 1; font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.win:not(.active) .bar .ttl { color: var(--fg-dim); }
+.ctl { display: flex; gap: 2px; }
+.ctl button {
+  width: 30px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.ctl button:hover { background: var(--hover); }
+.ctl .i { width: 14px; height: 14px; color: var(--fg); }
+.wbody { flex: 1; min-height: 0; display: flex; flex-direction: column; user-select: text; -webkit-user-select: text; }
+
+/* Notes */
+.notes textarea {
+  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px;
+  border: 0;
+  resize: none;
+  background: var(--field);
+  color: var(--fg);
+  font: 15px/1.55 var(--font-ui);
+}
+.notes textarea:focus-visible { outline-offset: -2px; }
+
+/* Calculator */
+.calc { padding: 12px; gap: 10px; }
+.screen {
+  min-height: 74px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+  background: var(--field);
+  border: 1px solid var(--win-edge);
+  border-radius: 10px;
+  font-family: var(--font-mono);
+  overflow: hidden;
+}
+.screen .hist { font-size: 12px; color: var(--fg-dim); min-height: 16px; }
+.screen .cur { font-size: 28px; font-weight: 500; font-variant-numeric: tabular-nums; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.keys { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.keys button {
+  min-height: 40px;
+  border: 1px solid var(--win-edge);
+  border-radius: 9px;
+  background: var(--win-bar);
+  font-size: 17px;
+  cursor: pointer;
+}
+.keys button:hover { background: var(--hover); }
+.keys button.op { color: var(--accent); font-weight: 600; }
+.keys button.eq { background: var(--accent); color: var(--accent-fg); border-color: transparent; font-weight: 600; }
+.keys button.zero { grid-column: span 2; }
+
+/* About */
+.about { padding: 20px; gap: 16px; }
+.about h2 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.about p { margin: 4px 0 0; color: var(--fg-dim); line-height: 1.5; max-width: 52ch; }
+.about dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 13px; }
+.about dt { color: var(--fg-dim); }
+.about dd { margin: 0; font-family: var(--font-mono); font-size: 12.5px; font-variant-numeric: tabular-nums; min-width: 0; overflow-wrap: anywhere; }
+
+/* Taskbar */
+.taskbar {
+  position: relative;
+  z-index: 2000;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 52px;
+  padding-inline: 8px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  backdrop-filter: blur(18px) saturate(1.3);
+  border-top: 1px solid var(--glass-edge);
+}
+.tb {
+  position: relative;
+  width: 44px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 0;
+  border-radius: 9px;
+  color: var(--fg);
+  text-decoration: none;
+  cursor: pointer;
+}
+.tb:hover { background: var(--hover); }
+.tb.active { background: var(--hover); }
+.tb::after {
+  content: "";
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  width: 0;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+  transform: translateX(-50%);
+  transition: width 0.15s;
+}
+.tb.open::after { width: 8px; }
+.tb.active::after { width: 18px; }
+.tb.start { color: var(--accent); }
+.sep { width: 1px; height: 24px; background: var(--glass-edge); margin-inline: 4px; }
+.spacer { flex: 1; }
+.tray {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 4px 10px;
+  border-radius: 9px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+.tray .date { color: var(--fg-dim); font-size: 11px; }
+
+/* Start menu */
+.menu {
+  position: absolute;
+  left: 8px;
+  bottom: 60px;
+  z-index: 1900;
+  width: min(340px, calc(100% - 16px));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  box-sizing: border-box;
+  background: var(--win);
+  border: 1px solid var(--win-edge);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+.search { display: flex; gap: 6px; }
+.search input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  border: 1px solid var(--win-edge);
+  border-radius: 9px;
+  background: var(--field);
+  color: var(--fg);
+  font: inherit;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.search a {
+  display: grid;
+  place-items: center;
+  padding: 0 14px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
+  text-decoration: none;
+}
+.mlabel { margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-dim); }
+.apps { display: flex; flex-direction: column; gap: 2px; }
+.mi {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  background: none;
+  border: 0;
+  border-radius: 9px;
+  color: var(--fg);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.mi:hover { background: var(--hover); }
+.mi .i { color: var(--accent); }
+.mi small { display: block; color: var(--fg-dim); font-size: 12px; }
+.mfoot { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--win-edge); }
+.user { display: flex; align-items: center; gap: 10px; font-weight: 500; }
+.avatar { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--accent); color: var(--accent-fg); font-weight: 600; font-size: 13px; }
+.restart { display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: none; border: 1px solid var(--win-edge); border-radius: 8px; cursor: pointer; }
+.restart:hover { background: var(--hover); }
+.restart .i { width: 16px; height: 16px; }
+
+/* Boot overlay */
+.boot {
+  position: absolute;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  background: var(--wall-top);
+}
+.boot .mark { color: var(--accent); }
+.boot .mark .i { width: 64px; height: 64px; stroke-width: 1.4; }
+.boot b { font-size: 20px; font-weight: 600; letter-spacing: 0.02em; }
+.boot .track { width: 180px; height: 4px; border-radius: 2px; background: var(--hover); overflow: hidden; }
+.boot .fill { width: 0; height: 100%; background: var(--accent); }
+.boot.run .fill { width: 100%; transition: width 2s ease-in-out; }
+
+/* Games */
+.menu { max-height: calc(100% - 68px); overflow-y: auto; }
+.games { padding: 12px; gap: 8px; }
+.grow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  background: var(--win-bar);
+  border: 1px solid var(--win-edge);
+  border-radius: 10px;
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+}
+.grow:hover { background: var(--hover); }
+.grow .i { width: 28px; height: 28px; color: var(--accent); flex: none; }
+.grow b { display: block; font-weight: 600; }
+.grow small { color: var(--fg-dim); font-size: 12.5px; }
+.game { padding: 10px; gap: 8px; align-items: stretch; }
+.hud { display: flex; justify-content: space-between; font-size: 13px; color: var(--fg-dim); }
+.hud b { color: var(--fg); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.game canvas { flex: 1; min-height: 0; width: 100%; object-fit: contain; border-radius: 8px; background: var(--field); touch-action: none; }
+.pad { display: flex; justify-content: center; gap: 10px; }
+.pad button {
+  width: 72px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--win-edge);
+  border-radius: 9px;
+  background: var(--win-bar);
+  color: var(--fg);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.pad button:hover { background: var(--hover); }
+.pad .i { width: 20px; height: 20px; }
+.pad.dpad { display: grid; grid-template-columns: repeat(3, 52px); justify-content: center; gap: 6px; }
+.pad.dpad button { width: 52px; height: 34px; }
+.hint { margin: 0; text-align: center; font-size: 12px; color: var(--fg-dim); }
+.rep { padding: 12px; gap: 10px; }
+.rform { display: flex; gap: 6px; }
+.rform input {
+  flex: 1;
+  min-width: 0;
+  height: 38px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  border: 1px solid var(--win-edge);
+  border-radius: 9px;
+  background: var(--field);
+  color: var(--fg);
+  font: inherit;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.rform .go { padding: 0 16px; border: 0; border-radius: 9px; background: var(--accent); color: var(--accent-fg); font-weight: 600; cursor: pointer; }
+.rtools { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12.5px; color: var(--fg-dim); }
+.rtools button { padding: 4px 10px; border: 1px solid var(--win-edge); border-radius: 7px; background: none; cursor: pointer; }
+.rtools button:hover { background: var(--hover); }
+.rout {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  margin: 0;
+  padding: 8px 12px;
+  list-style: none;
+  counter-reset: r;
+  background: var(--field);
+  border: 1px solid var(--win-edge);
+  border-radius: 9px;
+  font-size: 15px;
+}
+.rout li { counter-increment: r; display: flex; gap: 12px; padding: 3px 0; min-width: 0; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
+.rout li::before { content: counter(r); width: 2ch; flex: none; text-align: right; padding-top: 2px; font-family: var(--font-mono); font-size: 12px; color: var(--fg-dim); }
+.rout li span { min-width: 0; }
+
+.rout li span { min-height: 1.3em; }
+.rout li span.typing::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  background: var(--accent);
+  animation: blink 1s steps(1) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .rout li span.typing::after { animation: none; } }
+
+.term { background: #000000; color: #e8e4f0; font-family: var(--font-mono); font-size: 13px; line-height: 1.5; padding: 10px 12px; gap: 6px; }
+.tout { flex: 1; min-height: 0; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
+.tout .cmd { color: #93acff; }
+.tout .dim { color: #8d84a0; }
+.tline { display: flex; gap: 8px; align-items: center; }
+.tps { color: #93acff; flex: none; }
+.tline input { flex: 1; min-width: 0; background: none; border: 0; color: #e8e4f0; font: inherit; outline: none; caret-color: #93acff; user-select: text; -webkit-user-select: text; }
+.code { padding: 0; }
+.ctool { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--win-edge); background: var(--win-bar); flex: none; }
+.ctool .fname { flex: 1; font-family: var(--font-mono); font-size: 12.5px; }
+.ctool .go { padding: 5px 16px; border: 0; border-radius: 8px; background: var(--accent); color: var(--accent-fg); font-weight: 600; cursor: pointer; }
+.editor { flex: 1; min-height: 0; display: flex; background: var(--field); }
+.gut { margin: 0; padding: 12px 8px; min-width: 3ch; text-align: right; font: 13px/20px var(--font-mono); color: var(--fg-dim); overflow: hidden; border-right: 1px solid var(--win-edge); user-select: none; -webkit-user-select: none; }
+.editor textarea { flex: 1; min-width: 0; border: 0; resize: none; padding: 12px; background: transparent; color: var(--fg); font: 13px/20px var(--font-mono); white-space: pre; overflow: auto; tab-size: 2; }
+.editor textarea:focus-visible { outline-offset: -2px; }
+.cout { flex: none; max-height: 36%; overflow: auto; display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-top: 1px solid var(--win-edge); background: var(--win-bar); font-family: var(--font-mono); font-size: 12.5px; white-space: pre-wrap; user-select: text; -webkit-user-select: text; }
+.cout b { font-family: var(--font-ui); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-dim); font-weight: 600; }
+
+.dicon { color: var(--label); }
+.boot { color: var(--label); }
+#fs { width: 38px; }
+#fs .i { width: 20px; height: 20px; }
+
+.win.max { left: 0 !important; top: 0 !important; width: 100% !important; height: 100% !important; border-radius: 0; border: 0; }
+.win.max .bar { cursor: default; }
+.code { background: #000000; color: #e8e4f0; }
+.code .ctool { background: #0e0e13; border-color: rgba(255, 255, 255, 0.12); }
+.code .fname { color: #e8e4f0; }
+.code .editor { background: #000000; }
+.code .gut { color: #6f6880; border-color: rgba(255, 255, 255, 0.12); }
+.code .editor textarea { color: #e8e4f0; caret-color: #93acff; }
+.code .cout { background: #0e0e13; border-color: rgba(255, 255, 255, 0.12); color: #e8e4f0; }
+.code .cout b { color: #8d84a0; }
+
+.tout .err { color: #ff8a8a; }
+
+@media (max-width: 600px) {
+  .win { left: 8px !important; top: 8px !important; width: calc(100% - 16px) !important; height: calc(100% - 16px) !important; }
+  .bar { cursor: default; }
+  .tray .date { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tb::after, .boot.run .fill { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="desktop" id="desk">
+  <svg class="wall" viewBox="0 0 1000 600" preserveAspectRatio="xMaxYMax slice" aria-hidden="true">
+    <circle class="sun" cx="760" cy="640" r="110"/>
+    <circle class="ring" cx="760" cy="640" r="170"/>
+    <circle class="ring" cx="760" cy="640" r="240"/>
+    <circle class="ring" cx="760" cy="640" r="320"/>
+    <circle class="ring" cx="760" cy="640" r="410"/>
+    <circle class="ring" cx="760" cy="640" r="510"/>
+    <circle class="ring" cx="760" cy="640" r="620"/>
+  </svg>
+
+  <nav class="icons" aria-label="Desktop">
+    <a class="dicon" href="https://www.google.com" target="_blank" rel="noopener">
+      <span class="tile"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18M4.5 7.5h15M4.5 16.5h15"/></svg></span>
+      <span class="lbl">Google</span>
+    </a>
+    <button class="dicon" data-app="games" type="button">
+      <span class="tile"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="11" rx="5"/><path d="M8 10.5v4M6 12.5h4M15.5 11.5v.01M17.5 13.5v.01"/></svg></span>
+      <span class="lbl">Games</span>
+    </button>
+    <button class="dicon" data-app="term" type="button">
+      <span class="tile"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M12 15h5"/></svg></span>
+      <span class="lbl">Terminal</span>
+    </button>
+    <button class="dicon" data-app="code" type="button">
+      <span class="tile"><svg class="i" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg></span>
+      <span class="lbl">Code</span>
+    </button>
+    <button class="dicon" data-app="notes" type="button">
+      <span class="tile"><svg class="i" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/></svg></span>
+      <span class="lbl">Notes</span>
+    </button>
+    <button class="dicon" data-app="calc" type="button">
+      <span class="tile"><svg class="i" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M8 15h2M12 15h2M16 11v4"/></svg></span>
+      <span class="lbl">Calculator</span>
+    </button>
+    <button class="dicon" data-app="about" type="button">
+      <span class="tile"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg></span>
+      <span class="lbl">About Bib OS</span>
+    </button>
+  </nav>
+
+  <div class="menu" id="menu" hidden>
+    <div>
+      <p class="mlabel">Search Google</p>
+      <div class="search" style="margin-top:6px">
+        <input id="q" type="text" placeholder="Type, then press Enter" autocomplete="off" aria-label="Search Google">
+        <a id="go" href="https://www.google.com" target="_blank" rel="noopener">Search</a>
+      </div>
+    </div>
+    <div>
+      <p class="mlabel">Apps</p>
+      <div class="apps" style="margin-top:6px">
+        <a class="mi" href="https://www.google.com" target="_blank" rel="noopener">
+          <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18M4.5 7.5h15M4.5 16.5h15"/></svg>
+          <span>Google<small>Opens in a new tab</small></span>
+        </a>
+        <button class="mi" data-app="notes" type="button">
+          <svg class="i" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/></svg>
+          <span>Notes<small>Saved in this browser</small></span>
+        </button>
+        <button class="mi" data-app="calc" type="button">
+          <svg class="i" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M8 15h2M12 15h2M16 11v4"/></svg>
+          <span>Calculator</span>
+        </button>
+        <button class="mi" data-app="code" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg><span>Code<small>Write code (it does not run yet)</small></span></button>
+        <button class="mi" data-app="term" type="button"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M12 15h5"/></svg><span>Terminal<small>A Linux-style command line</small></span></button>
+        <button class="mi" data-app="about" type="button">
+          <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>
+          <span>About Bib OS</span>
+        </button>
+      </div>
+    </div>
+    <div>
+      <p class="mlabel">Games</p>
+      <div class="apps" style="margin-top:6px">
+        <button class="mi" data-app="drive" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M5 16v-5l2-5h10l2 5v5H5z"/><path d="M7 11h10M7.5 16v3M16.5 16v3"/></svg><span>Road Dodge<small>Driving game</small></span></button>
+        <button class="mi" data-app="repeat" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M17 3l3 3-3 3M4 11V9a3 3 0 0 1 3-3h13M7 21l-3-3 3-3M20 13v2a3 3 0 0 1-3 3H4"/></svg><span>Word Repeater<small>Repeats your text 20 times</small></span></button>
+        <button class="mi" data-app="snake" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M4 19h6a3 3 0 0 0 0-6H8a3 3 0 0 1 0-6h9"/><circle cx="19" cy="7" r="1.3"/></svg><span>Snake<small>Eat the dots, avoid the walls</small></span></button>
+      </div>
+    </div>
+    <div class="mfoot">
+      <div class="user"><span class="avatar">p</span>plato</div>
+      <button class="restart" id="restart" type="button">
+        <svg class="i" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v4h4"/></svg>Restart
+      </button>
+    </div>
+  </div>
+
+  <div class="boot" id="boot" hidden>
+    <div class="mark"><svg class="i" viewBox="0 0 24 24"><path d="M3 17h18"/><path d="M6.5 17a5.5 5.5 0 0 1 11 0"/><path d="M12 6V3M5.2 9.2 3.5 7.5M18.8 9.2l1.7-1.7"/></svg></div>
+    <b>Bib OS</b>
+    <div class="track"><div class="fill"></div></div>
+  </div>
+</div>
+
+<footer class="taskbar" id="taskbar">
+  <button class="tb start" id="start" type="button" aria-label="Start" aria-expanded="false" title="Start">
+    <svg class="i" viewBox="0 0 24 24"><path d="M3 17h18"/><path d="M6.5 17a5.5 5.5 0 0 1 11 0"/><path d="M12 6V3M5.2 9.2 3.5 7.5M18.8 9.2l1.7-1.7"/></svg>
+  </button>
+  <span class="sep"></span>
+  <a class="tb" href="https://www.google.com" target="_blank" rel="noopener" aria-label="Google" title="Google">
+    <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18M4.5 7.5h15M4.5 16.5h15"/></svg>
+  </a>
+  <button class="tb" data-tb="games" type="button" aria-label="Games" title="Games">
+    <svg class="i" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="11" rx="5"/><path d="M8 10.5v4M6 12.5h4M15.5 11.5v.01M17.5 13.5v.01"/></svg>
+  </button>
+  <button class="tb" data-tb="term" type="button" aria-label="Terminal" title="Terminal">
+    <svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M12 15h5"/></svg>
+  </button>
+  <button class="tb" data-tb="code" type="button" aria-label="Code" title="Code">
+    <svg class="i" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg>
+  </button>
+  <button class="tb" data-tb="notes" type="button" aria-label="Notes" title="Notes">
+    <svg class="i" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/></svg>
+  </button>
+  <button class="tb" data-tb="calc" type="button" aria-label="Calculator" title="Calculator">
+    <svg class="i" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M8 15h2M12 15h2M16 11v4"/></svg>
+  </button>
+  <button class="tb" data-tb="about" type="button" aria-label="About Bib OS" title="About Bib OS">
+    <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>
+  </button>
+  <span class="spacer"></span>
+  <button class="tb" id="fs" type="button" aria-label="Full screen" title="Full screen (or press F11)"><svg class="i" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+  <div class="tray" aria-label="Clock"><span id="time">--:--</span><span class="date" id="date"></span></div>
+</footer>
+
+<script>
+(function () {
+  var desk = document.getElementById('desk');
+  var menu = document.getElementById('menu');
+  var startBtn = document.getElementById('start');
+  var boot = document.getElementById('boot');
+  var bootedAt = Date.now();
+
+  var ICONS = {
+    notes: '<svg class="i" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/></svg>',
+    calc: '<svg class="i" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M8 15h2M12 15h2M16 11v4"/></svg>',
+    about: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>',
+    games: '<svg class="i" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="11" rx="5"/><path d="M8 10.5v4M6 12.5h4M15.5 11.5v.01M17.5 13.5v.01"/></svg>',
+    drive: '<svg class="i" viewBox="0 0 24 24"><path d="M5 16v-5l2-5h10l2 5v5H5z"/><path d="M7 11h10M7.5 16v3M16.5 16v3"/></svg>',
+    repeat: '<svg class="i" viewBox="0 0 24 24"><path d="M17 3l3 3-3 3M4 11V9a3 3 0 0 1 3-3h13M7 21l-3-3 3-3M20 13v2a3 3 0 0 1-3 3H4"/></svg>',
+    snake: '<svg class="i" viewBox="0 0 24 24"><path d="M4 19h6a3 3 0 0 0 0-6H8a3 3 0 0 1 0-6h9"/><circle cx="19" cy="7" r="1.3"/></svg>',
+    term: '<svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M12 15h5"/></svg>',
+    code: '<svg class="i" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg>'
+  };
+  var MIN = '<svg class="i" viewBox="0 0 24 24"><path d="M5 12h14"/></svg>';
+  var CLOSE = '<svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+  var MAX = '<svg class="i" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg>';
+
+  var APPS = {
+    notes: { title: 'Notes', size: [430, 330], build: buildNotes },
+    calc: { title: 'Calculator', size: [290, 400], build: buildCalc },
+    about: { title: 'About Bib OS', size: [380, 310], build: buildAbout },
+    games: { title: 'Games', size: [360, 290], build: buildGames },
+    drive: { title: 'Road Dodge', size: [330, 580], build: buildDrive },
+    repeat: { title: 'Word Repeater', size: [400, 430], build: buildRepeat },
+    snake: { title: 'Snake', size: [340, 500], build: buildSnake },
+    term: { title: 'Terminal', size: [450, 330], build: buildTerm },
+    code: { title: 'Code', size: [470, 410], build: buildCode }
+  };
+  var CHL = '<svg class="i" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>';
+  var CHR = '<svg class="i" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>';
+  var CHU = '<svg class="i" viewBox="0 0 24 24"><path d="M5 15l7-7 7 7"/></svg>';
+  var CHD = '<svg class="i" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></svg>';
+
+  var wins = {};
+  var activeId = null;
+  var z = 10;
+
+  function narrow() { return window.matchMedia('(max-width: 600px)').matches; }
+
+  function openApp(id) {
+    closeMenu();
+    if (wins[id]) {
+      wins[id].el.hidden = false;
+      focusWin(id);
+      return;
+    }
+    var app = APPS[id];
+    var d = desk.getBoundingClientRect();
+    var w = Math.min(app.size[0], d.width - 24);
+    var h = Math.min(app.size[1], d.height - 24);
+    var n = Object.keys(wins).length;
+    var x = Math.max(8, Math.min(150 + n * 30, d.width - w - 8));
+    var y = Math.max(8, Math.min(34 + n * 30, d.height - h - 8));
+
+    var el = document.createElement('section');
+    el.className = 'win';
+    el.setAttribute('aria-label', app.title);
+    el.style.cssText = 'left:' + x + 'px;top:' + y + 'px;width:' + w + 'px;height:' + h + 'px;';
+    el.innerHTML =
+      '<header class="bar">' + ICONS[id] + '<span class="ttl">' + app.title + '</span>' +
+      '<div class="ctl"><button type="button" data-act="min" aria-label="Minimize">' + MIN + '</button>' +
+      '<button type="button" data-act="max" aria-label="Maximize">' + MAX + '</button>' +
+      '<button type="button" data-act="close" aria-label="Close">' + CLOSE + '</button></div></header>' +
+      '<div class="wbody"></div>';
+    desk.appendChild(el);
+    var body = el.querySelector('.wbody');
+    var api = app.build(body) || {};
+    wins[id] = { el: el, api: api };
+    ensureTb(id);
+
+    el.addEventListener('pointerdown', function () { focusWin(id); });
+    el.querySelector('[data-act="min"]').addEventListener('click', function () { minimize(id); });
+    function toggleMax() {
+      var on = el.classList.toggle('max');
+      el.querySelector('[data-act="max"]').setAttribute('aria-label', on ? 'Restore' : 'Maximize');
+    }
+    el.querySelector('[data-act="max"]').addEventListener('click', toggleMax);
+    el.querySelector('.bar').addEventListener('dblclick', function (e) {
+      if (!e.target.closest('button')) toggleMax();
+    });
+    el.querySelector('[data-act="close"]').addEventListener('click', function () { closeWin(id); });
+    enableDrag(el, el.querySelector('.bar'));
+    focusWin(id);
+  }
+
+  function enableDrag(win, bar) {
+    bar.addEventListener('pointerdown', function (e) {
+      if (e.target.closest('button') || narrow() || win.classList.contains('max')) return;
+      var r = win.getBoundingClientRect();
+      var d = desk.getBoundingClientRect();
+      var dx = e.clientX - r.left, dy = e.clientY - r.top;
+      bar.setPointerCapture(e.pointerId);
+      bar.style.cursor = 'grabbing';
+      function move(ev) {
+        var x = ev.clientX - dx - d.left;
+        var y = ev.clientY - dy - d.top;
+        x = Math.max(80 - r.width, Math.min(x, d.width - 80));
+        y = Math.max(0, Math.min(y, d.height - 40));
+        win.style.left = x + 'px';
+        win.style.top = y + 'px';
+      }
+      function up() {
+        bar.removeEventListener('pointermove', move);
+        bar.style.cursor = '';
+      }
+      bar.addEventListener('pointermove', move);
+      bar.addEventListener('pointerup', up, { once: true });
+      bar.addEventListener('pointercancel', up, { once: true });
+    });
+  }
+
+  function focusWin(id) {
+    activeId = id;
+    z += 1;
+    wins[id].el.style.zIndex = z;
+    Object.keys(wins).forEach(function (k) {
+      wins[k].el.classList.toggle('active', k === id);
+    });
+    syncTaskbar();
+  }
+
+  function minimize(id) {
+    wins[id].el.hidden = true;
+    wins[id].el.classList.remove('active');
+    if (activeId === id) activeId = null;
+    syncTaskbar();
+  }
+
+  function closeWin(id) {
+    if (wins[id].api.destroy) wins[id].api.destroy();
+    wins[id].el.remove();
+    delete wins[id];
+    var dyn = document.querySelector('[data-tb="' + id + '"][data-dyn]');
+    if (dyn) dyn.remove();
+    if (activeId === id) activeId = null;
+    syncTaskbar();
+  }
+
+  function syncTaskbar() {
+    document.querySelectorAll('[data-tb]').forEach(function (b) {
+      var id = b.getAttribute('data-tb');
+      b.classList.toggle('open', !!wins[id]);
+      b.classList.toggle('active', activeId === id && !!wins[id] && !wins[id].el.hidden);
+    });
+  }
+
+  function tbToggle(id) {
+    if (!wins[id]) { openApp(id); return; }
+    if (wins[id].el.hidden) { wins[id].el.hidden = false; focusWin(id); return; }
+    if (activeId === id) { minimize(id); return; }
+    focusWin(id);
+  }
+  function ensureTb(id) {
+    if (document.querySelector('[data-tb="' + id + '"]')) return;
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tb';
+    b.setAttribute('data-tb', id);
+    b.setAttribute('data-dyn', '1');
+    b.setAttribute('aria-label', APPS[id].title);
+    b.title = APPS[id].title;
+    b.innerHTML = ICONS[id];
+    b.addEventListener('click', function () { tbToggle(id); });
+    document.querySelector('#taskbar .spacer').before(b);
+  }
+  document.querySelectorAll('[data-tb]').forEach(function (b) {
+    b.addEventListener('click', function () { tbToggle(b.getAttribute('data-tb')); });
+  });
+  document.querySelectorAll('[data-app]').forEach(function (b) {
+    b.addEventListener('click', function () { openApp(b.getAttribute('data-app')); });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (!activeId || !wins[activeId] || wins[activeId].el.hidden) return;
+    if (/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+    var api = wins[activeId].api;
+    if (api.key && api.key(e)) e.preventDefault();
+  });
+
+  /* Start menu */
+  function closeMenu() {
+    menu.hidden = true;
+    startBtn.setAttribute('aria-expanded', 'false');
+    startBtn.classList.remove('active');
+  }
+  function toggleMenu() {
+    var open = menu.hidden;
+    menu.hidden = !open;
+    startBtn.setAttribute('aria-expanded', String(open));
+    startBtn.classList.toggle('active', open);
+    if (open) document.getElementById('q').focus();
+  }
+  startBtn.addEventListener('click', toggleMenu);
+  document.addEventListener('pointerdown', function (e) {
+    if (!menu.hidden && !menu.contains(e.target) && !startBtn.contains(e.target)) closeMenu();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeMenu();
+  });
+  menu.querySelectorAll('a.mi').forEach(function (a) {
+    a.addEventListener('click', closeMenu);
+  });
+
+  var q = document.getElementById('q');
+  var go = document.getElementById('go');
+  q.addEventListener('input', function () {
+    var v = q.value.trim();
+    go.href = v ? 'https://www.google.com/search?q=' + encodeURIComponent(v) : 'https://www.google.com';
+  });
+  q.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); go.click(); closeMenu(); }
+  });
+  go.addEventListener('click', function () { setTimeout(closeMenu, 0); });
+
+  /* Restart */
+  document.getElementById('restart').addEventListener('click', function () {
+    closeMenu();
+    Object.keys(wins).forEach(closeWin);
+    boot.hidden = false;
+    boot.classList.remove('run');
+    void boot.offsetWidth;
+    boot.classList.add('run');
+    setTimeout(function () {
+      boot.hidden = true;
+      boot.classList.remove('run');
+      bootedAt = Date.now();
+      openApp('notes');
+    }, 2300);
+  });
+
+  /* Full screen */
+  var fsBtn = document.getElementById('fs');
+  var FS_IN = '<svg class="i" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
+  var FS_OUT = '<svg class="i" viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
+  var rootEl = document.documentElement;
+  function fsOn() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+  if (!(rootEl.requestFullscreen || rootEl.webkitRequestFullscreen)) fsBtn.hidden = true;
+  fsBtn.addEventListener('click', function () {
+    try {
+      if (fsOn()) {
+        (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      } else {
+        var p = (rootEl.requestFullscreen || rootEl.webkitRequestFullscreen).call(rootEl);
+        if (p && p.catch) p.catch(function () { fsBtn.title = 'Full screen is blocked here. Press F11 instead.'; });
+      }
+    } catch (e) {
+      fsBtn.title = 'Full screen is blocked here. Press F11 instead.';
+    }
+  });
+  function fsSync() {
+    var on = fsOn();
+    fsBtn.innerHTML = on ? FS_OUT : FS_IN;
+    fsBtn.setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen');
+  }
+  document.addEventListener('fullscreenchange', fsSync);
+  document.addEventListener('webkitfullscreenchange', fsSync);
+
+  /* Clock */
+  function tick() {
+    var now = new Date();
+    document.getElementById('time').textContent =
+      now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    document.getElementById('date').textContent =
+      now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+    var up = document.getElementById('uptime');
+    if (up) {
+      var s = Math.floor((Date.now() - bootedAt) / 1000);
+      var mm = String(Math.floor(s / 60)).padStart(2, '0');
+      var ss = String(s % 60).padStart(2, '0');
+      up.textContent = mm + ':' + ss;
+    }
+    var cnt = document.getElementById('wincount');
+    if (cnt) cnt.textContent = String(Object.keys(wins).length);
+  }
+  setInterval(tick, 1000);
+
+  /* App: Notes */
+  function buildNotes(body) {
+    body.classList.add('notes');
+    var starter = 'Welcome to Bib OS.\n\nClick the globe on the taskbar to open Google in a new tab.\nOpen Start to search Google from here.\n\nThis note saves itself in this browser.';
+    var saved = null;
+    try { saved = localStorage.getItem('platoos.notes'); } catch (e) {}
+    var ta = document.createElement('textarea');
+    ta.id = 'notes-text';
+    ta.setAttribute('aria-label', 'Note');
+    ta.value = saved !== null ? saved : starter;
+    ta.addEventListener('input', function () {
+      try { localStorage.setItem('platoos.notes', ta.value); } catch (e) {}
+    });
+    body.appendChild(ta);
+  }
+
+  /* App: Calculator */
+  function buildCalc(body) {
+    body.classList.add('calc');
+    body.innerHTML =
+      '<div class="screen"><div class="hist" id="calc-hist"></div><div class="cur" id="calc-cur">0</div></div>' +
+      '<div class="keys" id="calc-keys"></div>';
+    var keys = [
+      ['C', 'fn'], ['±', 'fn'], ['%', 'fn'], ['÷', 'op'],
+      ['7'], ['8'], ['9'], ['×', 'op'],
+      ['4'], ['5'], ['6'], ['−', 'op'],
+      ['1'], ['2'], ['3'], ['+', 'op'],
+      ['0', 'zero'], ['.'], ['=', 'eq']
+    ];
+    var cur = '0', prev = null, op = null, fresh = false;
+    var curEl = body.querySelector('#calc-cur');
+    var histEl = body.querySelector('#calc-hist');
+    var grid = body.querySelector('#calc-keys');
+
+    function fmt(n) {
+      if (!isFinite(n)) return 'Error';
+      return String(parseFloat(n.toPrecision(10)));
+    }
+    function compute(a, b, o) {
+      if (o === '+') return a + b;
+      if (o === '−') return a - b;
+      if (o === '×') return a * b;
+      return b === 0 ? NaN : a / b;
+    }
+    function show() {
+      curEl.textContent = cur;
+      histEl.textContent = op !== null ? fmt(prev) + ' ' + op : '';
+    }
+    function press(k) {
+      if (cur === 'Error' && k !== 'C') return;
+      if (/^[0-9]$/.test(k)) {
+        if (fresh || cur === '0') cur = k; else if (cur.replace(/[-.]/g, '').length < 12) cur += k;
+        fresh = false;
+      } else if (k === '.') {
+        if (fresh) { cur = '0.'; fresh = false; } else if (cur.indexOf('.') < 0) cur += '.';
+      } else if (k === 'C') {
+        cur = '0'; prev = null; op = null; fresh = false;
+      } else if (k === '±') {
+        if (cur !== '0') cur = cur.charAt(0) === '-' ? cur.slice(1) : '-' + cur;
+      } else if (k === '%') {
+        cur = fmt(parseFloat(cur) / 100);
+      } else if (k === '=') {
+        if (op !== null) {
+          var r = compute(prev, parseFloat(cur), op);
+          cur = fmt(r); op = null; prev = null; fresh = true;
+        }
+      } else {
+        if (op !== null && !fresh) {
+          cur = fmt(compute(prev, parseFloat(cur), op));
+          if (cur === 'Error') { op = null; prev = null; show(); return; }
+        }
+        prev = parseFloat(cur); op = k; fresh = true;
+      }
+      show();
+    }
+    keys.forEach(function (k) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = k[0];
+      if (k[1] === 'op') b.className = 'op';
+      if (k[1] === 'eq') b.className = 'eq';
+      if (k[1] === 'zero') b.className = 'zero';
+      b.addEventListener('click', function () { press(k[0]); });
+      grid.appendChild(b);
+    });
+  }
+
+  /* App: About */
+  function buildAbout(body) {
+    body.classList.add('about');
+    body.innerHTML =
+      '<div><h2>Bib OS 0.1</h2><p>A small desktop that runs inside a web page. It has a taskbar, a Start menu, a clock and a few apps. Google opens in a new browser tab because websites cannot load inside another page.</p></div>' +
+      '<dl>' +
+      '<dt>Made for</dt><dd>plato</dd>' +
+      '<dt>Runs on</dt><dd>your web browser</dd>' +
+      '<dt>Uptime</dt><dd id="uptime">00:00</dd>' +
+      '<dt>Open windows</dt><dd id="wincount">0</dd>' +
+      '</dl>';
+    tick();
+  }
+
+  /* Tiny Python-style interpreter: print, variables, math, strings, lists, if/elif/else, while, for, def */
+  function pyRun(src) {
+    var outText = '';
+    var steps = 0, depth = 0;
+    var MAX_STEPS = 400000;
+
+    function err(kind, msg, line) {
+      var e = new Error(kind + ': ' + msg);
+      e.kind = kind;
+      if (line !== undefined) e.pyline = line;
+      return e;
+    }
+    function stripComment(line) {
+      var q = null;
+      for (var i = 0; i < line.length; i++) {
+        var c = line[i];
+        if (q) {
+          if (c === '\\') i++;
+          else if (c === q) q = null;
+        } else if (c === '"' || c === "'") q = c;
+        else if (c === '#') return line.slice(0, i);
+      }
+      return line;
+    }
+    function unescape(s) {
+      return s.replace(/\\(.)/g, function (m, c) {
+        if (c === 'n') return '\n';
+        if (c === 't') return '\t';
+        return c;
+      });
+    }
+
+    var TOK = /\s*(?:(\d+(?:\.\d+)?)|([fF]?)("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|([A-Za-z_][A-Za-z0-9_]*)|(\*\*|\/\/|==|!=|<=|>=|\+=|-=|\*=|\/=|%=|[-+*\/%<>=()\[\]{},.:]))/y;
+    function tokenize(text, no) {
+      var toks = [], pos = 0;
+      while (!/^\s*$/.test(text.slice(pos))) {
+        TOK.lastIndex = pos;
+        var m = TOK.exec(text);
+        if (!m) throw err('SyntaxError', 'invalid syntax', no);
+        pos = TOK.lastIndex;
+        if (m[1] !== undefined) toks.push({ t: 'num', v: parseFloat(m[1]) });
+        else if (m[3] !== undefined) toks.push({ t: m[2] ? 'fstr' : 'str', v: unescape(m[3].slice(1, -1)) });
+        else if (m[4] !== undefined) toks.push({ t: 'name', v: m[4] });
+        else toks.push({ t: 'op', v: m[5] });
+      }
+      return toks;
+    }
+
+    var KEYWORDS = ['and', 'or', 'not', 'in', 'if', 'elif', 'else', 'for', 'while', 'def', 'return', 'break', 'continue', 'pass'];
+
+    function parseExprTokens(toks, no) {
+      var i = 0;
+      function isOp(v) { var t = toks[i]; return !!t && t.t === 'op' && t.v === v; }
+      function isName(v) { var t = toks[i]; return !!t && t.t === 'name' && t.v === v; }
+      function fail() { throw err('SyntaxError', 'invalid syntax', no); }
+      function expectOp(v) { if (!isOp(v)) fail(); i++; }
+
+      function expr() { return orExpr(); }
+      function orExpr() {
+        var l = andExpr();
+        while (isName('or')) { i++; l = { k: 'or', l: l, r: andExpr() }; }
+        return l;
+      }
+      function andExpr() {
+        var l = notExpr();
+        while (isName('and')) { i++; l = { k: 'and', l: l, r: notExpr() }; }
+        return l;
+      }
+      function notExpr() {
+        if (isName('not')) { i++; return { k: 'not', e: notExpr() }; }
+        return cmp();
+      }
+      function cmp() {
+        var l = arith();
+        while (true) {
+          var op = null, t = toks[i];
+          if (t && t.t === 'op' && ['==', '!=', '<', '>', '<=', '>='].indexOf(t.v) >= 0) { op = t.v; i++; }
+          else if (isName('in')) { op = 'in'; i++; }
+          else if (isName('not') && toks[i + 1] && toks[i + 1].t === 'name' && toks[i + 1].v === 'in') { op = 'not in'; i += 2; }
+          else break;
+          l = { k: 'bin', op: op, l: l, r: arith() };
+        }
+        return l;
+      }
+      function arith() {
+        var l = term();
+        while (isOp('+') || isOp('-')) { var op = toks[i].v; i++; l = { k: 'bin', op: op, l: l, r: term() }; }
+        return l;
+      }
+      function term() {
+        var l = factor();
+        while (isOp('*') || isOp('/') || isOp('//') || isOp('%')) { var op = toks[i].v; i++; l = { k: 'bin', op: op, l: l, r: factor() }; }
+        return l;
+      }
+      function factor() {
+        if (isOp('-')) { i++; return { k: 'neg', e: factor() }; }
+        if (isOp('+')) { i++; return factor(); }
+        return power();
+      }
+      function power() {
+        var b = postfix();
+        if (isOp('**')) { i++; return { k: 'bin', op: '**', l: b, r: factor() }; }
+        return b;
+      }
+      function postfix() {
+        var e = atom();
+        while (true) {
+          if (isOp('(')) {
+            i++;
+            var args = [], kw = {};
+            while (!isOp(')')) {
+              if (toks[i] && toks[i].t === 'name' && toks[i + 1] && toks[i + 1].t === 'op' && toks[i + 1].v === '=') {
+                var kn = toks[i].v; i += 2; kw[kn] = expr();
+              } else args.push(expr());
+              if (isOp(',')) i++; else break;
+            }
+            expectOp(')');
+            e = { k: 'call', f: e, args: args, kw: kw };
+          } else if (isOp('[')) {
+            i++;
+            var a = null, b = null, slice = false;
+            if (!isOp(':')) a = expr();
+            if (isOp(':')) { slice = true; i++; if (!isOp(']')) b = expr(); }
+            expectOp(']');
+            e = slice ? { k: 'slice', o: e, a: a, b: b } : { k: 'index', o: e, i: a };
+          } else if (isOp('.')) {
+            i++;
+            var n = toks[i];
+            if (!n || n.t !== 'name') fail();
+            i++;
+            e = { k: 'attr', o: e, n: n.v };
+          } else break;
+        }
+        return e;
+      }
+      function fstring(raw) {
+        var parts = [], lit = '', j = 0;
+        while (j < raw.length) {
+          var c = raw[j];
+          if (c === '{') {
+            if (raw[j + 1] === '{') { lit += '{'; j += 2; continue; }
+            var d = 1, k = j + 1;
+            while (k < raw.length && d > 0) { if (raw[k] === '{') d++; else if (raw[k] === '}') d--; k++; }
+            if (d) throw err('SyntaxError', "f-string: expecting '}'", no);
+            var inner = raw.slice(j + 1, k - 1), spec = null;
+            var fm = /:(\.\d+f)$/.exec(inner);
+            if (fm) { spec = fm[1]; inner = inner.slice(0, fm.index); }
+            if (lit) { parts.push({ k: 'lit', v: lit }); lit = ''; }
+            parts.push({ k: 'fmt', e: parseExprTokens(tokenize(inner, no), no), spec: spec });
+            j = k;
+          } else if (c === '}' && raw[j + 1] === '}') { lit += '}'; j += 2; }
+          else { lit += c; j++; }
+        }
+        if (lit) parts.push({ k: 'lit', v: lit });
+        return { k: 'fstr', parts: parts };
+      }
+      function atom() {
+        var t = toks[i];
+        if (!t) fail();
+        if (t.t === 'num' || t.t === 'str') { i++; return { k: 'lit', v: t.v }; }
+        if (t.t === 'fstr') { i++; return fstring(t.v); }
+        if (t.t === 'name') {
+          if (t.v === 'True') { i++; return { k: 'lit', v: true }; }
+          if (t.v === 'False') { i++; return { k: 'lit', v: false }; }
+          if (t.v === 'None') { i++; return { k: 'lit', v: null }; }
+          if (KEYWORDS.indexOf(t.v) >= 0) fail();
+          i++;
+          return { k: 'name', n: t.v };
+        }
+        if (t.t === 'op') {
+          if (t.v === '(') { i++; var e = expr(); expectOp(')'); return e; }
+          if (t.v === '[') {
+            i++;
+            var items = [];
+            while (!isOp(']')) { items.push(expr()); if (isOp(',')) i++; else break; }
+            expectOp(']');
+            return { k: 'list', items: items };
+          }
+        }
+        fail();
+      }
+      var result = expr();
+      if (i < toks.length) fail();
+      return result;
+    }
+
+    /* ---- statements ---- */
+    function parseStmtLine(line) {
+      var text = line.text, no = line.no;
+      var isBlock = /:$/.test(text);
+      var toks = tokenize(isBlock ? text.slice(0, -1) : text, no);
+      if (!toks.length) throw err('SyntaxError', 'invalid syntax', no);
+      var h = toks[0].t === 'name' ? toks[0].v : null;
+      function ex(a) { return parseExprTokens(toks.slice(a), no); }
+      if (h === 'if' || h === 'elif' || h === 'while') {
+        if (!isBlock) throw err('SyntaxError', "expected ':'", no);
+        return { k: h, cond: ex(1), block: true, no: no };
+      }
+      if (h === 'else') {
+        if (!isBlock || toks.length !== 1) throw err('SyntaxError', 'invalid syntax', no);
+        return { k: 'else', block: true, no: no };
+      }
+      if (h === 'for') {
+        if (!isBlock) throw err('SyntaxError', "expected ':'", no);
+        if (!toks[1] || toks[1].t !== 'name' || !toks[2] || toks[2].v !== 'in') throw err('SyntaxError', 'invalid syntax', no);
+        return { k: 'for', name: toks[1].v, iter: ex(3), block: true, no: no };
+      }
+      if (h === 'def') {
+        if (!isBlock) throw err('SyntaxError', "expected ':'", no);
+        if (!toks[1] || toks[1].t !== 'name' || !toks[2] || toks[2].v !== '(') throw err('SyntaxError', 'invalid syntax', no);
+        var params = [], j = 3;
+        while (toks[j] && !(toks[j].t === 'op' && toks[j].v === ')')) {
+          if (toks[j].t !== 'name') throw err('SyntaxError', 'invalid syntax', no);
+          params.push(toks[j].v); j++;
+          if (toks[j] && toks[j].v === ',') j++;
+        }
+        if (!toks[j] || j !== toks.length - 1) throw err('SyntaxError', 'invalid syntax', no);
+        return { k: 'def', name: toks[1].v, params: params, block: true, no: no };
+      }
+      if (isBlock) throw err('SyntaxError', 'invalid syntax', no);
+      if (h === 'return') return { k: 'return', e: toks.length > 1 ? ex(1) : null, no: no };
+      if (h === 'break' || h === 'continue' || h === 'pass') {
+        if (toks.length !== 1) throw err('SyntaxError', 'invalid syntax', no);
+        return { k: h, no: no };
+      }
+      var dep = 0, idx = -1;
+      for (var q = 0; q < toks.length; q++) {
+        var tk = toks[q];
+        if (tk.t !== 'op') continue;
+        if (tk.v === '(' || tk.v === '[' || tk.v === '{') dep++;
+        else if (tk.v === ')' || tk.v === ']' || tk.v === '}') dep--;
+        else if (dep === 0 && ['=', '+=', '-=', '*=', '/=', '%='].indexOf(tk.v) >= 0) { idx = q; break; }
+      }
+      if (idx > 0) {
+        var target = parseExprTokens(toks.slice(0, idx), no);
+        if (target.k !== 'name' && target.k !== 'index') throw err('SyntaxError', 'cannot assign to this expression', no);
+        return { k: 'assign', op: toks[idx].v, target: target, value: parseExprTokens(toks.slice(idx + 1), no), no: no };
+      }
+      return { k: 'expr', e: parseExprTokens(toks, no), no: no };
+    }
+
+    function headOf(line) { var m = /^[A-Za-z_]+/.exec(line.text); return m ? m[0] : ''; }
+
+    var raw = String(src).replace(/\r/g, '').split('\n');
+    var lines = [];
+    for (var li = 0; li < raw.length; li++) {
+      var text = stripComment(raw[li]);
+      if (!text.trim()) continue;
+      var lead = /^[ \t]*/.exec(text)[0], ind = 0;
+      for (var z = 0; z < lead.length; z++) ind += lead[z] === '\t' ? 4 : 1;
+      lines.push({ indent: ind, text: text.trim(), no: li + 1 });
+    }
+
+    function parseBlock(i, indent) {
+      var stmts = [];
+      while (i < lines.length) {
+        var ln = lines[i];
+        if (ln.indent < indent) break;
+        if (ln.indent > indent) throw err('IndentationError', 'unexpected indent', ln.no);
+        var node = parseStmtLine(ln);
+        i++;
+        if (node.block) {
+          if (i >= lines.length || lines[i].indent <= indent) throw err('IndentationError', 'expected an indented block', ln.no);
+          var r = parseBlock(i, lines[i].indent);
+          node.body = r[0]; i = r[1];
+          if (node.k === 'if') {
+            var cur = node;
+            while (i < lines.length && lines[i].indent === indent) {
+              var hd = headOf(lines[i]);
+              if (hd !== 'elif' && hd !== 'else') break;
+              var n2 = parseStmtLine(lines[i]);
+              i++;
+              if (i >= lines.length || lines[i].indent <= indent) throw err('IndentationError', 'expected an indented block', n2.no);
+              var r2 = parseBlock(i, lines[i].indent);
+              i = r2[1];
+              if (hd === 'elif') {
+                var nn = { k: 'if', cond: n2.cond, body: r2[0], orelse: null, no: n2.no };
+                cur.orelse = [nn];
+                cur = nn;
+              } else { cur.orelse = r2[0]; break; }
+            }
+          }
+        }
+        stmts.push(node);
+      }
+      return [stmts, i];
+    }
+
+    /* ---- values ---- */
+    function fmtNum(v) {
+      if (v === Infinity) return 'inf';
+      if (v === -Infinity) return '-inf';
+      return String(v);
+    }
+    function pyStr(v) {
+      if (typeof v === 'string') return v;
+      if (v === null || v === undefined) return 'None';
+      if (v === true) return 'True';
+      if (v === false) return 'False';
+      if (typeof v === 'number') return fmtNum(v);
+      if (Array.isArray(v)) return '[' + v.map(pyRepr).join(', ') + ']';
+      return '<function>';
+    }
+    function pyRepr(v) {
+      if (typeof v === 'string') return "'" + v.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
+      return pyStr(v);
+    }
+    function typeName(v) {
+      if (typeof v === 'string') return 'str';
+      if (typeof v === 'number') return Number.isInteger(v) ? 'int' : 'float';
+      if (typeof v === 'boolean') return 'bool';
+      if (v === null) return 'NoneType';
+      if (Array.isArray(v)) return 'list';
+      return 'function';
+    }
+    function truthy(v) {
+      return !(v === null || v === false || v === 0 || v === '' || (Array.isArray(v) && v.length === 0));
+    }
+    function eq(a, b) {
+      if (Array.isArray(a) && Array.isArray(b)) {
+        if (a.length !== b.length) return false;
+        for (var i = 0; i < a.length; i++) if (!eq(a[i], b[i])) return false;
+        return true;
+      }
+      if (typeof a === 'boolean' && typeof b === 'number') return +a === b;
+      if (typeof a === 'number' && typeof b === 'boolean') return a === +b;
+      return a === b;
+    }
+    function num(v) { return typeof v === 'boolean' ? +v : v; }
+    function binop(op, a, b) {
+      if (op === '==') return eq(a, b);
+      if (op === '!=') return !eq(a, b);
+      if (op === 'in' || op === 'not in') {
+        var found;
+        if (typeof b === 'string') {
+          if (typeof a !== 'string') throw err('TypeError', "'in <string>' requires string as left operand");
+          found = b.indexOf(a) >= 0;
+        } else if (Array.isArray(b)) {
+          found = b.some(function (x) { return eq(x, a); });
+        } else throw err('TypeError', "argument of type '" + typeName(b) + "' is not iterable");
+        return op === 'in' ? found : !found;
+      }
+      a = num(a); b = num(b);
+      var an = typeof a === 'number', bn = typeof b === 'number';
+      var as = typeof a === 'string', bs = typeof b === 'string';
+      if (op === '<' || op === '>' || op === '<=' || op === '>=') {
+        if (!((an && bn) || (as && bs))) throw err('TypeError', "'" + op + "' not supported between instances of '" + typeName(a) + "' and '" + typeName(b) + "'");
+        if (op === '<') return a < b;
+        if (op === '>') return a > b;
+        if (op === '<=') return a <= b;
+        return a >= b;
+      }
+      if (op === '+') {
+        if (an && bn) return a + b;
+        if (as && bs) return a + b;
+        if (Array.isArray(a) && Array.isArray(b)) return a.concat(b);
+        throw err('TypeError', "unsupported operand type(s) for +: '" + typeName(a) + "' and '" + typeName(b) + "'");
+      }
+      if (op === '*') {
+        if (an && bn) return a * b;
+        if ((as || Array.isArray(a)) && bn) return rep(a, b);
+        if (an && (bs || Array.isArray(b))) return rep(b, a);
+        throw err('TypeError', "unsupported operand type(s) for *: '" + typeName(a) + "' and '" + typeName(b) + "'");
+      }
+      if (!(an && bn)) throw err('TypeError', "unsupported operand type(s) for " + op + ": '" + typeName(a) + "' and '" + typeName(b) + "'");
+      if (op === '-') return a - b;
+      if (op === '**') return Math.pow(a, b);
+      if (b === 0) throw err('ZeroDivisionError', op === '%' ? 'modulo by zero' : 'division by zero');
+      if (op === '/') return a / b;
+      if (op === '//') return Math.floor(a / b);
+      if (op === '%') return ((a % b) + b) % b;
+      throw err('SyntaxError', 'invalid syntax');
+    }
+    function rep(x, n) {
+      n = Math.max(0, Math.floor(n));
+      if (x.length * n > 100000) throw err('MemoryError', 'result too large');
+      if (typeof x === 'string') return new Array(n + 1).join(x);
+      var r = [];
+      for (var i = 0; i < n; i++) r = r.concat(x);
+      return r;
+    }
+    function rnd(x) {
+      var f = Math.floor(x), d = x - f;
+      if (d < 0.5) return f;
+      if (d > 0.5) return f + 1;
+      return f % 2 === 0 ? f : f + 1;
+    }
+    function toIter(v) {
+      if (Array.isArray(v)) return v.slice();
+      if (typeof v === 'string') return v.split('');
+      throw err('TypeError', "'" + typeName(v) + "' object is not iterable");
+    }
+
+    var BUILTINS = {
+      print: function (args, kw) {
+        var sep = kw.sep !== undefined ? pyStr(kw.sep) : ' ';
+        var end = kw.end !== undefined ? pyStr(kw.end) : '\n';
+        outText += args.map(pyStr).join(sep) + end;
+        if (outText.length > 100000) throw err('RuntimeError', 'too much output');
+        return null;
+      },
+      len: function (a) {
+        if (typeof a[0] === 'string' || Array.isArray(a[0])) return a[0].length;
+        throw err('TypeError', "object of type '" + typeName(a[0]) + "' has no len()");
+      },
+      range: function (a) {
+        var s = 0, e, st = 1;
+        if (a.length === 1) e = a[0];
+        else if (a.length === 2) { s = a[0]; e = a[1]; }
+        else if (a.length === 3) { s = a[0]; e = a[1]; st = a[2]; }
+        else throw err('TypeError', 'range expected 1 to 3 arguments');
+        if (![s, e, st].every(Number.isInteger)) throw err('TypeError', 'range arguments must be whole numbers');
+        if (st === 0) throw err('ValueError', 'range() arg 3 must not be zero');
+        var r = [];
+        for (var i = s; st > 0 ? i < e : i > e; i += st) {
+          r.push(i);
+          if (r.length > 1000000) throw err('MemoryError', 'range is too large');
+        }
+        return r;
+      },
+      str: function (a) { return pyStr(a[0]); },
+      int: function (a) {
+        var v = a[0];
+        if (typeof v === 'number') return Math.trunc(v);
+        if (typeof v === 'boolean') return +v;
+        if (typeof v === 'string' && /^\s*[+-]?\d+\s*$/.test(v)) return parseInt(v, 10);
+        throw err('ValueError', 'invalid literal for int() with base 10: ' + pyRepr(v));
+      },
+      float: function (a) {
+        var v = a[0];
+        if (typeof v === 'number') return v;
+        if (typeof v === 'boolean') return +v;
+        if (typeof v === 'string' && v.trim() !== '' && !isNaN(Number(v))) return Number(v);
+        throw err('ValueError', 'could not convert string to float: ' + pyRepr(v));
+      },
+      bool: function (a) { return truthy(a[0]); },
+      list: function (a) { return a.length ? toIter(a[0]) : []; },
+      abs: function (a) { return Math.abs(num(a[0])); },
+      min: function (a) { var x = a.length === 1 ? toIter(a[0]) : a; if (!x.length) throw err('ValueError', 'min() arg is an empty sequence'); return x.reduce(function (m, v) { return binop('<', v, m) ? v : m; }); },
+      max: function (a) { var x = a.length === 1 ? toIter(a[0]) : a; if (!x.length) throw err('ValueError', 'max() arg is an empty sequence'); return x.reduce(function (m, v) { return binop('>', v, m) ? v : m; }); },
+      sum: function (a) { return toIter(a[0]).reduce(function (t, v) { return binop('+', t, v); }, 0); },
+      round: function (a) {
+        var x = num(a[0]);
+        if (typeof x !== 'number') throw err('TypeError', 'round() needs a number');
+        if (a.length > 1) { var m = Math.pow(10, a[1]); return rnd(x * m) / m; }
+        return rnd(x);
+      },
+      sorted: function (a) {
+        return toIter(a[0]).sort(function (x, y) { return binop('<', x, y) ? -1 : (binop('>', x, y) ? 1 : 0); });
+      },
+      input: function () { throw err('RuntimeError', 'input() is not supported in Bib OS yet'); }
+    };
+
+    function method(o, name) {
+      var tn = typeName(o);
+      if (typeof o === 'string') {
+        var sm = {
+          upper: function () { return o.toUpperCase(); },
+          lower: function () { return o.toLowerCase(); },
+          strip: function () { return o.trim(); },
+          capitalize: function () { return o.charAt(0).toUpperCase() + o.slice(1).toLowerCase(); },
+          replace: function (a) { return o.split(pyStr(a[0])).join(pyStr(a[1])); },
+          split: function (a) { return a.length && a[0] !== null ? o.split(a[0]) : o.split(/\s+/).filter(function (x) { return x; }); },
+          join: function (a) {
+            return toIter(a[0]).map(function (x, i) {
+              if (typeof x !== 'string') throw err('TypeError', 'sequence item ' + i + ': expected str instance, ' + typeName(x) + ' found');
+              return x;
+            }).join(o);
+          },
+          startswith: function (a) { return o.indexOf(a[0]) === 0; },
+          endswith: function (a) { return o.length >= a[0].length && o.slice(o.length - a[0].length) === a[0]; },
+          find: function (a) { return o.indexOf(a[0]); }
+        };
+        if (sm[name]) return sm[name];
+      } else if (Array.isArray(o)) {
+        var lm = {
+          append: function (a) { o.push(a[0]); return null; },
+          pop: function (a) {
+            if (!o.length) throw err('IndexError', 'pop from empty list');
+            if (a.length) { var k = a[0] < 0 ? a[0] + o.length : a[0]; if (k < 0 || k >= o.length) throw err('IndexError', 'pop index out of range'); return o.splice(k, 1)[0]; }
+            return o.pop();
+          },
+          reverse: function () { o.reverse(); return null; },
+          sort: function () { var s = BUILTINS.sorted([o]); for (var i = 0; i < s.length; i++) o[i] = s[i]; return null; }
+        };
+        if (lm[name]) return lm[name];
+      }
+      throw err('AttributeError', "'" + tn + "' object has no attribute '" + name + "'");
+    }
+
+    /* ---- evaluation ---- */
+    function Scope(parent) { this.v = Object.create(null); this.p = parent; }
+    function lookup(sc, n) {
+      for (var s = sc; s; s = s.p) if (n in s.v) return s.v[n];
+      if (Object.prototype.hasOwnProperty.call(BUILTINS, n)) return BUILTINS[n];
+      throw err('NameError', "name '" + n + "' is not defined");
+    }
+    function tick() {
+      if (++steps > MAX_STEPS) throw err('RuntimeError', 'program ran too long (maybe an endless loop)');
+    }
+    function callValue(f, args, kw) {
+      if (typeof f === 'function') return f(args, kw);
+      if (f && f.fn) {
+        if (args.length !== f.params.length) throw err('TypeError', f.name + '() takes ' + f.params.length + ' argument(s) but ' + args.length + ' were given');
+        if (++depth > 150) { depth = 0; throw err('RecursionError', 'maximum recursion depth exceeded'); }
+        var sc = new Scope(f.scope);
+        f.params.forEach(function (p, i) { sc.v[p] = args[i]; });
+        var r = execBlock(f.body, sc);
+        depth--;
+        return r && r.t === 'return' ? r.v : null;
+      }
+      throw err('TypeError', "'" + typeName(f) + "' object is not callable");
+    }
+    function idxOf(o, i) {
+      if (!(Array.isArray(o) || typeof o === 'string')) throw err('TypeError', "'" + typeName(o) + "' object is not subscriptable");
+      if (!Number.isInteger(i)) throw err('TypeError', 'indices must be whole numbers');
+      var k = i < 0 ? i + o.length : i;
+      if (k < 0 || k >= o.length) throw err('IndexError', (Array.isArray(o) ? 'list' : 'string') + ' index out of range');
+      return k;
+    }
+    function evalE(n, sc) {
+      switch (n.k) {
+        case 'lit': return n.v;
+        case 'name': return lookup(sc, n.n);
+        case 'list': return n.items.map(function (x) { return evalE(x, sc); });
+        case 'neg': { var nv = num(evalE(n.e, sc)); if (typeof nv !== 'number') throw err('TypeError', "bad operand type for unary -: '" + typeName(nv) + "'"); return -nv; }
+        case 'not': return !truthy(evalE(n.e, sc));
+        case 'or': { var lo = evalE(n.l, sc); return truthy(lo) ? lo : evalE(n.r, sc); }
+        case 'and': { var la = evalE(n.l, sc); return truthy(la) ? evalE(n.r, sc) : la; }
+        case 'bin': return binop(n.op, evalE(n.l, sc), evalE(n.r, sc));
+        case 'index': { var o = evalE(n.o, sc); return o[idxOf(o, evalE(n.i, sc))]; }
+        case 'slice': {
+          var so = evalE(n.o, sc);
+          if (!(Array.isArray(so) || typeof so === 'string')) throw err('TypeError', "'" + typeName(so) + "' object is not subscriptable");
+          return so.slice(n.a ? evalE(n.a, sc) : 0, n.b ? evalE(n.b, sc) : undefined);
+        }
+        case 'attr': return method(evalE(n.o, sc), n.n);
+        case 'call': {
+          var f = evalE(n.f, sc);
+          var args = n.args.map(function (x) { return evalE(x, sc); });
+          var kw = {};
+          Object.keys(n.kw).forEach(function (key) { kw[key] = evalE(n.kw[key], sc); });
+          return callValue(f, args, kw);
+        }
+        case 'fstr': {
+          var s = '';
+          n.parts.forEach(function (p) {
+            if (p.k === 'lit') s += p.v;
+            else {
+              var v = evalE(p.e, sc);
+              if (p.spec) {
+                if (typeof v !== 'number') throw err('ValueError', 'cannot format this value with ' + p.spec);
+                s += v.toFixed(parseInt(p.spec.slice(1), 10));
+              } else s += pyStr(v);
+            }
+          });
+          return s;
+        }
+      }
+      throw err('SyntaxError', 'invalid syntax');
+    }
+    function assign(t, val, sc) {
+      if (t.k === 'name') { sc.v[t.n] = val; return; }
+      var o = evalE(t.o, sc);
+      if (!Array.isArray(o)) throw err('TypeError', "'" + typeName(o) + "' object does not support item assignment");
+      o[idxOf(o, evalE(t.i, sc))] = val;
+    }
+    function execBlock(stmts, sc) {
+      for (var i = 0; i < stmts.length; i++) {
+        var r = exec(stmts[i], sc);
+        if (r) return r;
+      }
+      return null;
+    }
+    function exec(n, sc) {
+      tick();
+      try {
+        switch (n.k) {
+          case 'expr': evalE(n.e, sc); return null;
+          case 'assign': {
+            var val = evalE(n.value, sc);
+            if (n.op !== '=') val = binop(n.op.charAt(0), evalE(n.target, sc), val);
+            assign(n.target, val, sc);
+            return null;
+          }
+          case 'if':
+            if (truthy(evalE(n.cond, sc))) return execBlock(n.body, sc);
+            return n.orelse ? execBlock(n.orelse, sc) : null;
+          case 'while':
+            while (truthy(evalE(n.cond, sc))) {
+              tick();
+              var wr = execBlock(n.body, sc);
+              if (wr) { if (wr.t === 'break') break; if (wr.t === 'continue') continue; return wr; }
+            }
+            return null;
+          case 'for': {
+            var items = toIter(evalE(n.iter, sc));
+            for (var i = 0; i < items.length; i++) {
+              tick();
+              sc.v[n.name] = items[i];
+              var fr = execBlock(n.body, sc);
+              if (fr) { if (fr.t === 'break') break; if (fr.t === 'continue') continue; return fr; }
+            }
+            return null;
+          }
+          case 'def': sc.v[n.name] = { fn: true, name: n.name, params: n.params, body: n.body, scope: sc }; return null;
+          case 'return': return { t: 'return', v: n.e ? evalE(n.e, sc) : null };
+          case 'break': return { t: 'break' };
+          case 'continue': return { t: 'continue' };
+          case 'pass': return null;
+        }
+        throw err('SyntaxError', 'invalid syntax');
+      } catch (e) {
+        if (e.pyline === undefined) e.pyline = n.no;
+        throw e;
+      }
+    }
+
+    try {
+      if (lines.length && lines[0].indent !== 0) throw err('IndentationError', 'unexpected indent', lines[0].no);
+      var parsed = parseBlock(0, 0);
+      if (parsed[1] < lines.length) throw err('IndentationError', 'unexpected indent', lines[parsed[1]].no);
+      execBlock(parsed[0], new Scope(null));
+      return { output: outText.replace(/\n$/, ''), error: null };
+    } catch (e) {
+      var msg;
+      if (e instanceof RangeError) msg = 'RecursionError: maximum recursion depth exceeded';
+      else if (e.kind) msg = e.message;
+      else msg = 'Error: ' + e.message;
+      if (e.pyline) msg += ' (line ' + e.pyline + ')';
+      return { output: outText.replace(/\n$/, ''), error: msg };
+    }
+  }
+
+  var APP_ALIASES = {
+    notes: 'notes', note: 'notes', calculator: 'calc', calc: 'calc', about: 'about', aboutbibos: 'about',
+    games: 'games', game: 'games', roaddodge: 'drive', drive: 'drive', driving: 'drive',
+    wordrepeater: 'repeat', repeater: 'repeat', repeat: 'repeat', snake: 'snake',
+    terminal: 'term', term: 'term', code: 'code', editor: 'code'
+  };
+
+  /* Shared code file */
+  var DEFAULT_CODE = '# hello.py\nname = "plato"\nprint("Hello from Bib OS, " + name)\n\nfor i in range(1, 4):\n    print("Count", i)\n';
+  function getCode() {
+    try { var v = localStorage.getItem('bibos.code'); if (v !== null) return v; } catch (e) {}
+    return DEFAULT_CODE;
+  }
+  function setCode(v) {
+    try { localStorage.setItem('bibos.code', v); } catch (e) {}
+  }
+
+  /* App: Code */
+  function buildCode(body) {
+    body.classList.add('code');
+    body.innerHTML =
+      '<div class="ctool"><span class="fname">hello.py</span><button type="button" class="go" id="c-run">Run</button></div>' +
+      '<div class="editor"><pre class="gut" id="c-gut" aria-hidden="true"></pre>' +
+      '<textarea id="c-ta" spellcheck="false" wrap="off" aria-label="Code editor"></textarea></div>' +
+      '<div class="cout"><b>Output</b><span id="c-out">Press Run to run hello.py.</span></div>';
+    var ta = body.querySelector('#c-ta');
+    var gut = body.querySelector('#c-gut');
+    var out = body.querySelector('#c-out');
+    ta.value = getCode();
+    function lines() {
+      var n = ta.value.split('\n').length, a = [];
+      for (var i = 1; i <= n; i++) a.push(i);
+      gut.textContent = a.join('\n');
+      gut.scrollTop = ta.scrollTop;
+    }
+    ta.addEventListener('input', function () { setCode(ta.value); lines(); });
+    ta.addEventListener('scroll', function () { gut.scrollTop = ta.scrollTop; });
+    ta.addEventListener('keydown', function (e) {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        ta.setRangeText('  ', ta.selectionStart, ta.selectionEnd, 'end');
+        setCode(ta.value);
+        lines();
+      }
+    });
+    body.querySelector('#c-run').addEventListener('click', function () {
+      var r = pyRun(ta.value);
+      var text = '$ python hello.py';
+      if (r.output) text += '\n' + r.output;
+      if (r.error) text += '\n' + r.error;
+      if (!r.output && !r.error) text += '\n(no output)';
+      out.textContent = text;
+    });
+    lines();
+  }
+
+  /* App: Terminal */
+  function buildTerm(body) {
+    body.classList.add('term');
+    var PS = 'plato@bibos:~$';
+    body.innerHTML =
+      '<div class="tout" id="t-out"></div>' +
+      '<div class="tline"><span class="tps">' + PS + '</span>' +
+      '<input id="t-in" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Terminal input"></div>';
+    var out = body.querySelector('#t-out');
+    var inp = body.querySelector('#t-in');
+    var hist = [], hi = 0;
+    function print(text, cls) {
+      var d = document.createElement('div');
+      if (cls) d.className = cls;
+      d.textContent = text;
+      out.appendChild(d);
+      out.scrollTop = out.scrollHeight;
+    }
+    function notes() {
+      try { var n = localStorage.getItem('platoos.notes'); if (n !== null) return n; } catch (e) {}
+      return 'Welcome to Bib OS.';
+    }
+    function run(line) {
+      line = line.replace(/^\s*\$\s*/, '');
+      print(PS + ' ' + line, 'cmd');
+      var parts = line.trim().split(/\s+/);
+      var cmd = parts[0], args = parts.slice(1);
+      if (!cmd) return;
+      if (cmd === 'help') {
+        print('Commands: help, ls, cat, echo, pwd, whoami, date, uname, clear');
+        print('sudo <app name>   open an app, for example: sudo games');
+        print('python hello.py   run the program from the Code app');
+      } else if (cmd === 'ls') {
+        print('hello.py  notes.txt');
+      } else if (cmd === 'pwd') {
+        print('/home/plato');
+      } else if (cmd === 'whoami') {
+        print('plato');
+      } else if (cmd === 'date') {
+        print(new Date().toString());
+      } else if (cmd === 'uname') {
+        print('BibOS 0.1 (runs in a web page)');
+      } else if (cmd === 'echo') {
+        print(args.join(' '));
+      } else if (cmd === 'clear') {
+        out.textContent = '';
+      } else if (cmd === 'cat') {
+        if (args[0] === 'hello.py') print(getCode());
+        else if (args[0] === 'notes.txt') print(notes());
+        else print('cat: ' + (args[0] || '') + ': No such file', 'dim');
+      } else if (cmd === 'run' || cmd === 'python' || cmd === 'python3') {
+        if (args[0] === 'hello.py') {
+          var res = pyRun(getCode());
+          if (res.output) print(res.output);
+          if (res.error) print(res.error, 'err');
+        }
+        else print(cmd + ': ' + (args[0] || 'no file given') + ': No such file', 'dim');
+      } else if (cmd === 'sudo' || cmd === 'open') {
+        var shown = args.join(' ').replace(/["'$]/g, '').trim();
+        var key = shown.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (!key) {
+          print('usage: sudo <app name>   example: sudo games', 'dim');
+        } else if (key === 'google') {
+          print('[sudo] opening Google in a new tab...');
+          var a = document.createElement('a');
+          a.href = 'https://www.google.com';
+          a.target = '_blank';
+          a.rel = 'noopener';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        } else if (APP_ALIASES[key]) {
+          print('[sudo] opening ' + APPS[APP_ALIASES[key]].title + '...');
+          openApp(APP_ALIASES[key]);
+        } else {
+          print('sudo: ' + shown + ': app not found. Try: notes, calculator, games, code, terminal, about, google', 'dim');
+        }
+      } else {
+        print(cmd + ': command not found', 'dim');
+      }
+    }
+    inp.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        var v = inp.value;
+        if (v.trim()) { hist.push(v); }
+        hi = hist.length;
+        inp.value = '';
+        run(v);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (hi > 0) { hi--; inp.value = hist[hi]; }
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (hi < hist.length - 1) { hi++; inp.value = hist[hi]; } else { hi = hist.length; inp.value = ''; }
+      }
+    });
+    body.addEventListener('click', function () {
+      if (!window.getSelection().toString()) inp.focus();
+    });
+    print('Bib OS terminal. Type help to see the commands.', 'dim');
+  }
+
+  /* Games launcher */
+  function buildGames(body) {
+    body.classList.add('games');
+    [
+      ['drive', 'Road Dodge', 'Steer between three lanes and miss the traffic.'],
+      ['repeat', 'Word Repeater', 'Type anything and see it 20 times.'],
+      ['snake', 'Snake', 'Eat the dots. Do not hit the walls or yourself.']
+    ].forEach(function (g) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'grow';
+      b.innerHTML = ICONS[g[0]] + '<span><b>' + g[1] + '</b><small>' + g[2] + '</small></span>';
+      b.addEventListener('click', function () { openApp(g[0]); });
+      body.appendChild(b);
+    });
+  }
+
+  /* Game: Road Dodge */
+  function buildDrive(body) {
+    body.classList.add('game');
+    body.innerHTML =
+      '<div class="hud"><span>Score <b id="d-score">0</b></span><span>Best <b id="d-best">0</b></span></div>' +
+      '<canvas id="d-cv" width="300" height="440" aria-label="Road Dodge"></canvas>' +
+      '<div class="pad"><button type="button" id="d-l" aria-label="Steer left">' + CHL + '</button>' +
+      '<button type="button" id="d-r" aria-label="Steer right">' + CHR + '</button></div>' +
+      '<p class="hint">Arrow keys or A / D to steer. Space restarts after a crash.</p>';
+    var cv = body.querySelector('#d-cv');
+    var g = cv.getContext('2d');
+    var scoreEl = body.querySelector('#d-score');
+    var bestEl = body.querySelector('#d-best');
+    var W = 300, H = 440, LANES = [60, 150, 240], CW = 38, CH = 66, PY = H - CH - 24;
+    var COLORS = ['#e0576b', '#e8b04a', '#4fb3a5', '#9a7be0'];
+    var st = 'ready', lane = 1, px = LANES[1], cars = [], speed = 4.5, dist = 0, passed = 0;
+    var score = 0, best = 0, off = 0, gap = 80, last = 0, raf = 0, accent = '#2f5fd0';
+    try { best = parseInt(localStorage.getItem('bibos.drive.best'), 10) || 0; } catch (e) {}
+    bestEl.textContent = best;
+
+    function readAccent() {
+      accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || accent;
+    }
+    readAccent();
+    function begin() {
+      readAccent();
+      cars = []; speed = 4.5; score = 0; dist = 0; passed = 0; lane = 1; px = LANES[1]; gap = 90; st = 'play';
+    }
+    function steer(d) {
+      if (st === 'ready') begin();
+      if (st === 'play') lane = Math.max(0, Math.min(2, lane + d));
+    }
+    function crash() {
+      st = 'over';
+      if (score > best) {
+        best = score;
+        bestEl.textContent = best;
+        try { localStorage.setItem('bibos.drive.best', String(best)); } catch (e) {}
+      }
+    }
+    function update(dt) {
+      speed = Math.min(9.5, speed + 0.002 * dt);
+      off = (off + speed * dt) % 40;
+      px += (LANES[lane] - px) * Math.min(1, 0.22 * dt);
+      dist += speed * dt;
+      score = Math.floor(dist / 12) + passed * 10;
+      gap -= speed * dt;
+      if (gap <= 0) {
+        cars.push({ lane: Math.floor(Math.random() * 3), y: -CH, c: COLORS[Math.floor(Math.random() * COLORS.length)] });
+        gap = 220 + speed * 14 + Math.random() * 110;
+      }
+      for (var i = cars.length - 1; i >= 0; i--) {
+        var c = cars[i];
+        c.y += speed * dt;
+        if (Math.abs(px - LANES[c.lane]) < CW - 6 && c.y + CH > PY + 8 && c.y < PY + CH - 8) { crash(); return; }
+        if (c.y > H) { cars.splice(i, 1); passed++; }
+      }
+    }
+    function car(x, y, color) {
+      g.fillStyle = color;
+      g.beginPath();
+      if (g.roundRect) g.roundRect(x - CW / 2, y, CW, CH, 8); else g.rect(x - CW / 2, y, CW, CH);
+      g.fill();
+      g.fillStyle = 'rgba(15,15,25,0.72)';
+      g.fillRect(x - CW / 2 + 6, y + 16, CW - 12, 14);
+      g.fillRect(x - CW / 2 + 7, y + CH - 22, CW - 14, 9);
+    }
+    function overlay(l1, l2) {
+      g.fillStyle = 'rgba(12,10,22,0.76)';
+      g.fillRect(20, H / 2 - 56, W - 40, 112);
+      g.fillStyle = '#ffffff';
+      g.textAlign = 'center';
+      g.font = '600 22px "Instrument Sans", system-ui, sans-serif';
+      g.fillText(l1, W / 2, H / 2 - 8);
+      g.font = '13px "Instrument Sans", system-ui, sans-serif';
+      g.fillText(l2, W / 2, H / 2 + 22);
+    }
+    function draw() {
+      g.fillStyle = '#1d1f2b';
+      g.fillRect(0, 0, W, H);
+      g.fillStyle = '#2f3242';
+      g.fillRect(15, 0, W - 30, H);
+      g.fillStyle = 'rgba(255,255,255,0.85)';
+      g.fillRect(15, 0, 3, H);
+      g.fillRect(W - 18, 0, 3, H);
+      g.fillStyle = 'rgba(255,255,255,0.45)';
+      for (var y = -40 + off; y < H; y += 40) { g.fillRect(103, y, 4, 22); g.fillRect(193, y, 4, 22); }
+      cars.forEach(function (c) { car(LANES[c.lane], c.y, c.c); });
+      car(px, PY, accent);
+      if (st === 'ready') overlay('Road Dodge', 'Press an arrow key to start');
+      if (st === 'over') overlay('Crash!', 'Score ' + score + '. Press Space or tap to retry');
+      scoreEl.textContent = score;
+    }
+    function frame(t) {
+      if (!cv.isConnected) return;
+      raf = requestAnimationFrame(frame);
+      var w = cv.closest('.win');
+      if (w && w.hidden) { last = t; return; }
+      var dt = Math.min(3, (t - last) / 16.67) || 1;
+      last = t;
+      if (st === 'play') update(dt);
+      draw();
+    }
+    body.querySelector('#d-l').addEventListener('pointerdown', function () { steer(-1); });
+    body.querySelector('#d-r').addEventListener('pointerdown', function () { steer(1); });
+    cv.addEventListener('pointerdown', function () { if (st !== 'play') begin(); });
+    raf = requestAnimationFrame(frame);
+    return {
+      key: function (e) {
+        var k = e.key;
+        if (k === 'ArrowLeft' || k === 'a' || k === 'A') { if (!e.repeat) steer(-1); return true; }
+        if (k === 'ArrowRight' || k === 'd' || k === 'D') { if (!e.repeat) steer(1); return true; }
+        if (k === ' ' || k === 'Enter') { if (st !== 'play') begin(); return true; }
+        return false;
+      },
+      destroy: function () { cancelAnimationFrame(raf); }
+    };
+  }
+
+  /* Game: Word Repeater */
+  function buildRepeat(body) {
+    body.classList.add('rep');
+    body.innerHTML =
+      '<div class="rform"><input id="rep-in" type="text" maxlength="120" placeholder="Type a word or sentence" autocomplete="off" aria-label="Text to repeat" value="hello">' +
+      '<button type="button" class="go" id="rep-go">Repeat</button></div>' +
+      '<div class="rtools"><span id="rep-count"></span><button type="button" id="rep-copy">Copy</button></div>' +
+      '<ol class="rout" id="rep-out"></ol>';
+    var input = body.querySelector('#rep-in');
+    var out = body.querySelector('#rep-out');
+    var count = body.querySelector('#rep-count');
+    var copy = body.querySelector('#rep-copy');
+    var TIMES = 20;
+    var timer = 0;
+    function stop() { clearTimeout(timer); timer = 0; }
+    function render() {
+      stop();
+      var v = input.value;
+      out.textContent = '';
+      copy.textContent = 'Copy';
+      copy.hidden = true;
+      if (!v.trim()) {
+        count.textContent = 'Type something, then press Repeat.';
+        return;
+      }
+      var total = v.length * TIMES;
+      var delay = Math.max(10, Math.min(60, Math.round(5000 / total)));
+      var line = 0, pos = 0, span = null;
+      function newLine() {
+        var li = document.createElement('li');
+        span = document.createElement('span');
+        span.className = 'typing';
+        li.appendChild(span);
+        out.appendChild(li);
+        out.scrollTop = out.scrollHeight;
+      }
+      function tickType() {
+        if (!out.isConnected) return;
+        if (pos < v.length) {
+          pos++;
+          span.textContent = v.slice(0, pos);
+          timer = setTimeout(tickType, delay);
+          return;
+        }
+        span.className = '';
+        line++;
+        if (line < TIMES) {
+          pos = 0;
+          newLine();
+          count.textContent = 'Typing ' + (line + 1) + ' of ' + TIMES + '...';
+          timer = setTimeout(tickType, delay * 4);
+        } else {
+          count.textContent = 'Repeated ' + TIMES + ' times.';
+          copy.hidden = false;
+        }
+      }
+      newLine();
+      count.textContent = 'Typing 1 of ' + TIMES + '...';
+      timer = setTimeout(tickType, delay);
+    }
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter') render(); });
+    body.querySelector('#rep-go').addEventListener('click', function () { render(); input.focus(); });
+    copy.addEventListener('click', function () {
+      var text = new Array(TIMES + 1).join(input.value + '\n').replace(/\n$/, '');
+      function fallback() {
+        var r = document.createRange();
+        r.selectNodeContents(out);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(r);
+        copy.textContent = 'Selected. Press Ctrl+C';
+      }
+      try {
+        navigator.clipboard.writeText(text).then(function () { copy.textContent = 'Copied'; }, fallback);
+      } catch (e) { fallback(); }
+    });
+    render();
+    return { destroy: stop };
+  }
+
+  /* Game: Snake */
+  function buildSnake(body) {
+    body.classList.add('game');
+    body.innerHTML =
+      '<div class="hud"><span>Score <b id="s-score">0</b></span><span>Best <b id="s-best">0</b></span></div>' +
+      '<canvas id="s-cv" width="300" height="300" aria-label="Snake"></canvas>' +
+      '<div class="pad dpad">' +
+      '<button type="button" data-d="up" aria-label="Up" style="grid-column:2">' + CHU + '</button>' +
+      '<button type="button" data-d="left" aria-label="Left" style="grid-column:1;grid-row:2">' + CHL + '</button>' +
+      '<button type="button" data-d="down" aria-label="Down" style="grid-column:2;grid-row:2">' + CHD + '</button>' +
+      '<button type="button" data-d="right" aria-label="Right" style="grid-column:3;grid-row:2">' + CHR + '</button></div>' +
+      '<p class="hint">Arrow keys or W A S D to steer. Space restarts.</p>';
+    var cv = body.querySelector('#s-cv');
+    var g = cv.getContext('2d');
+    var scoreEl = body.querySelector('#s-score');
+    var bestEl = body.querySelector('#s-best');
+    var N = 15, C = 20, W = 300;
+    var snake, dir, nd, food, score, st, best = 0;
+    try { best = parseInt(localStorage.getItem('bibos.snake.best'), 10) || 0; } catch (e) {}
+    bestEl.textContent = best;
+
+    function place() {
+      do {
+        food = { x: Math.floor(Math.random() * N), y: Math.floor(Math.random() * N) };
+      } while (snake.some(function (s) { return s.x === food.x && s.y === food.y; }));
+    }
+    function reset() {
+      snake = [{ x: 7, y: 7 }, { x: 6, y: 7 }, { x: 5, y: 7 }];
+      dir = { x: 1, y: 0 };
+      nd = dir;
+      score = 0;
+      st = 'ready';
+      scoreEl.textContent = 0;
+      place();
+      draw();
+    }
+    function turn(dx, dy) {
+      if (st === 'over') return;
+      if (dx === -dir.x && dy === -dir.y) return;
+      nd = { x: dx, y: dy };
+      if (st === 'ready') st = 'play';
+    }
+    function step() {
+      if (st !== 'play') return;
+      dir = nd;
+      var h = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+      var eat = h.x === food.x && h.y === food.y;
+      var solid = eat ? snake : snake.slice(0, -1);
+      var hit = h.x < 0 || h.y < 0 || h.x >= N || h.y >= N ||
+        solid.some(function (s) { return s.x === h.x && s.y === h.y; });
+      if (hit) {
+        st = 'over';
+        if (score > best) {
+          best = score;
+          bestEl.textContent = best;
+          try { localStorage.setItem('bibos.snake.best', String(best)); } catch (e) {}
+        }
+        return;
+      }
+      snake.unshift(h);
+      if (eat) { score++; scoreEl.textContent = score; place(); } else { snake.pop(); }
+    }
+    function overlay(l1, l2, bg, fg) {
+      g.fillStyle = bg;
+      g.fillRect(20, 100, W - 40, 100);
+      g.fillStyle = fg;
+      g.textAlign = 'center';
+      g.font = '600 22px "Instrument Sans", system-ui, sans-serif';
+      g.fillText(l1, W / 2, 142);
+      g.font = '13px "Instrument Sans", system-ui, sans-serif';
+      g.fillText(l2, W / 2, 170);
+    }
+    function draw() {
+      var cs = getComputedStyle(document.documentElement);
+      var bg = cs.getPropertyValue('--field').trim() || '#ffffff';
+      var ac = cs.getPropertyValue('--accent').trim() || '#2f5fd0';
+      g.fillStyle = bg;
+      g.fillRect(0, 0, W, W);
+      g.fillStyle = '#e0576b';
+      g.beginPath();
+      g.arc(food.x * C + C / 2, food.y * C + C / 2, C / 2 - 3, 0, Math.PI * 2);
+      g.fill();
+      snake.forEach(function (s, i) {
+        g.globalAlpha = i === 0 ? 1 : 0.8;
+        g.fillStyle = ac;
+        g.fillRect(s.x * C + 1, s.y * C + 1, C - 2, C - 2);
+      });
+      g.globalAlpha = 1;
+      if (st === 'ready') overlay('Snake', 'Press an arrow key to start', 'rgba(12,10,22,0.76)', '#ffffff');
+      if (st === 'over') overlay('Game over', 'Score ' + score + '. Press Space or tap to retry', 'rgba(12,10,22,0.76)', '#ffffff');
+    }
+    var timer = setInterval(function () {
+      if (!cv.isConnected) { clearInterval(timer); return; }
+      var w = cv.closest('.win');
+      if (w && w.hidden) return;
+      step();
+      draw();
+    }, 115);
+    body.querySelectorAll('[data-d]').forEach(function (b) {
+      b.addEventListener('pointerdown', function () {
+        var d = b.getAttribute('data-d');
+        if (d === 'up') turn(0, -1);
+        if (d === 'down') turn(0, 1);
+        if (d === 'left') turn(-1, 0);
+        if (d === 'right') turn(1, 0);
+      });
+    });
+    cv.addEventListener('pointerdown', function () { if (st === 'over') reset(); });
+    reset();
+    return {
+      key: function (e) {
+        var k = e.key;
+        if (k === 'ArrowUp' || k === 'w' || k === 'W') { turn(0, -1); return true; }
+        if (k === 'ArrowDown' || k === 's' || k === 'S') { turn(0, 1); return true; }
+        if (k === 'ArrowLeft' || k === 'a' || k === 'A') { turn(-1, 0); return true; }
+        if (k === 'ArrowRight' || k === 'd' || k === 'D') { turn(1, 0); return true; }
+        if (k === ' ' || k === 'Enter') { if (st === 'over') reset(); return true; }
+        return false;
+      },
+      destroy: function () { clearInterval(timer); }
+    };
+  }
+
+  tick();
+  openApp('notes');
+})();
+</script>
+</body>
+</html>
